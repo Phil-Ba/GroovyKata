@@ -2,7 +2,7 @@ import spock.lang.Specification
 
 /**
  * Created by pbayer.*/
-class GstringKata extends Specification {
+class GStringKata extends Specification {
 
 	def "String template at work"() {
 		setup:
@@ -22,6 +22,14 @@ class GstringKata extends Specification {
 
 		expect:
 		"${x}+${y}".toInteger() == x + y
+	}
+
+	def "call a closure"() {
+		setup:
+		def funct = {"fooBar"}
+
+		expect:
+		"${funct}" == "fooBar"
 	}
 
 }
