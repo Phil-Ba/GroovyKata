@@ -1,0 +1,15 @@
+group 'at.bay'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'groovy'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.+'
+    compile 'org.apache.logging.log4j:log4j-core:2.+'
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+}
