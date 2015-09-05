@@ -14,10 +14,16 @@ class ClosureDelegationKata extends Specification {
 			x
 		}
 
+		/**
+		 * Returns the this of the closure
+		 * */
 		def thisClosure = {
 			this
 		}
 
+		/**
+		 * Returns the owner of the inner closure
+		 * */
 		def ownerClosure = {
 			def ownerInnerClosure = {
 				owner
@@ -25,6 +31,9 @@ class ClosureDelegationKata extends Specification {
 			ownerInnerClosure()
 		}
 
+		/**
+		 * Returns the delegate of the closure
+		 * */
 		def delegateClosure = {
 			delegate
 		}
@@ -36,64 +45,81 @@ class ClosureDelegationKata extends Specification {
 	def "Simple closure delegation"() {
 		expect: "this refers to the closureHolder"
 		closureHolder.thisClosure() == closureHolder
-		and: "owner refers to the enclosing object/closure"
+		and:
+		"owner refers to the enclosing object/closure. Since this closure returns the owner of an inner closure, the owner should be this " +
+				"closure"
 		closureHolder.ownerClosure() == closureHolder.ownerClosure
+		and: "the owners of outer and inner closure are different"
+		closureHolder.ownerClosure() != closureHolder.ownerClosure.owner
 		and: "the default delegate is the owner"
 		closureHolder.delegateClosure() == closureHolder.delegateClosure.owner
 	}
 
-	def "Changing the closure delegate"() {
+	def "Changing the delegate of a closure"() {
 		setup:
-		int foo = 99
-		closureHolder.delegateClosure.delegate = foo
-		def expectedDelegate = closureHolder.delegateClosure.owner
+		String foo = 'goliath'
+		def closure = { delegate.toUpperCase() }
 
-		expect:
-		closureHolder.delegateClosure() == expectedDelegate
+		when: 'we change the delegate of the closure'
+		closure.owner = foo
+
+		then: 'toUpperCase should be invoked on the  delegate'
+		closure() == 'GOLIATH'
 	}
 
-	def "Closures delegate it they dont have a property"() {
+	class Vendor {
+
+		String product
+
+		def scream = {
+			product.toUpperCase() + '!'
+		}
+	}
+
+	def "The lexical scope of closures is the scope of their owner"() {
 		setup:
-		def outerProperty = -1
-		def closure = { outerProperty }
+		Vendor vendor = new Vendor(product: 'cabbage')
 
-		expect:
-		closure() == outerProperty
-		closure.resolveStrategy == Closure.OWNER_FIRST
+		when: 'We change the product'
+
+		then:
+		vendor.scream() == 'ICE CREAM!'
 	}
 
-	class Person {
+	class ADelegate {
 
-		int age
+		int anInt
 	}
 
-	def "Set the delegate to resolve to the delegate's property"() {
+	def "If a closure doesnt find a variable it tries to find it in the delegate"() {
 		setup:
-		def delegate = new Person(age: 99)
-		def closure = { age }
+		def aClosure = {
+			anInt++
+		}
+		def aDelegate = new ADelegate()
 
-		expect:
-		closure() == 99
+		when: 'We setup the delegate and closure properly'
+
+
+		then: 'anInt should resolve to the property in the delegate'
+		aClosure() == 23
 	}
 
-	def "Change the property resolution so that the delegate's property is used"() {
-		//		def age = -1
-		//		def closure = { -> age }
-		//		def delegate = new Person(age: 99)
-		//		closure.delegate = delegate
-		//		closure.resolveStrategy == Closure.TO_SELF
-		//
-		//		assert closure() == 99
-		expect:
-		assert test().call() == 99
-		true
+	def "Delegation only works if the closure cant find the variable"() {
+		setup:
+		def anInt = 5
+		def aClosure = {
+			anInt++
+		}
+		aClosure.resolveStrategy = Closure.DELEGATE_ONLY
+		def aDelegate = new ADelegate(anInt: 23)
+		aClosure.delegate = aDelegate
+
+		when: 'We expect the result to be?'
+		def expecedResult = 24
+
+		then: 'anInt should resolve to the property in the delegate'
+		aClosure() == expecedResult
 	}
 
-	def test() {
-		def age = -1
-		def closure = { -> age }
-		closure.delegate = new Person(age: 99)
-		closure.resolveStrategy == Closure.DELEGATE_ONLY
-		closure
-	}
 }
